@@ -1,0 +1,7 @@
+{
+    "name" : "Grammar::Debugger",
+    "version" : "*",
+    "description" : "Simple tracing and debugging support for Perl 6 grammars",
+    "depends" : [ "Term::ANSIColor" ],
+    "source-url" : "git://github.com/jnthn/grammar-debugger.git"
+}
