@@ -13,7 +13,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Metamodel::GrammarHOW is Mu {
+my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
     has $!indent = 0;
     has $!auto-continue = False;
     has $!stop-at-fail = False;
@@ -22,6 +22,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW is Mu {
     has %!cond-breakpoints;
     
     method add_method(Mu $obj, $name, $code) {
+        callsame;
         if $code.?breakpoint {
             if $code.?breakpoint-condition {
                 %!cond-breakpoints{$code.name} = $code.breakpoint-condition;
@@ -30,12 +31,11 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW is Mu {
                 @!breakpoints.push($code.name);
             }
         }
-        nextsame;
     }
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE Bool defined MATCH>) ??
+        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH>) ??
             $meth !!
             -> $c, |$args {
                 # Method name.
@@ -44,7 +44,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW is Mu {
                 # Call rule.
                 self.intervene(EnterRule, $name);
                 $!indent++;
-                my $result := $meth($obj, |$args);
+                my $result := $meth($c, |$args);
                 $!indent--;
                 
                 # Dump result.
