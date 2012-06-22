@@ -41,4 +41,4 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW is Mu {
 
 # Export this as the meta-class for the "grammar" package declarator.
 my module EXPORTHOW { }
-EXPORTHOW.WHO.<grammar> = TracedGrammarHOW;
+EXPORTHOW::<grammar> = TracedGrammarHOW;

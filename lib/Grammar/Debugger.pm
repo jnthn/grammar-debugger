@@ -168,4 +168,4 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
 
 # Export this as the meta-class for the "grammar" package declarator.
 my module EXPORTHOW { }
-EXPORTHOW.WHO.<grammar> = DebuggedGrammarHOW;
+EXPORTHOW::<grammar> = DebuggedGrammarHOW;
