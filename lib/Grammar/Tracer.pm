@@ -1,6 +1,6 @@
 use Term::ANSIColor;
 
-my class TracedGrammarHOW is Metamodel::GrammarHOW is Mu {
+my class TracedGrammarHOW is Metamodel::GrammarHOW {
     my $indent = 0;
     
     method find_method($obj, $name) {
