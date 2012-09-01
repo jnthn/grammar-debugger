@@ -7,13 +7,13 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
         my $meth := callsame;
         substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH pos from>) ??
             $meth !!
-            -> $c, |$args {
+            -> $c, |args {
                 # Method name.
                 say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
                 
                 # Call rule.
                 $indent++;
-                my $result := $meth($obj, |$args);
+                my $result := $meth($obj, |args);
                 $indent--;
                 
                 # Dump result.
