@@ -5,7 +5,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH pos from>) ??
+        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH pos from orig>) ??
             $meth !!
             -> $c, |args {
                 # Method name.
