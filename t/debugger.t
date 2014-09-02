@@ -13,7 +13,8 @@ grammar Sample {
 
 lives_ok
     {
-        my $*OUT = class { method say(*@x) { }; method print(*@x) { } }
+        my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } };
+        my $*IN  = class { method get(*@x) { '' } };
         Sample.parse('x')
     },
     'grammar.parse(...) with the debugger works';

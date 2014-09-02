@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Grammar::Tracer;
 
-plan *;
+plan 1;
 
 
 grammar Sample {
@@ -13,7 +13,7 @@ grammar Sample {
 
 lives_ok
     {
-        my $*OUT = class { method say(*@x) { }; method print(*@x) { } }
+        my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } }
         Sample.parse('x')
     },
     'grammar.parse(...) with the tracer works';
