@@ -5,25 +5,24 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH pos from orig>) ??
-            $meth !!
-            -> $c, |args {
-                # Method name.
-                say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
-                
-                # Call rule.
-                $indent++;
-                my $result := $meth($obj, |args);
-                $indent--;
-                
-                # Dump result.
-                my $match := $result.MATCH;
-                say ('|  ' x $indent) ~ '* ' ~
-                    ($result.MATCH ??
-                        colored('MATCH', 'white on_green') ~ summary($match) !!
-                        colored('FAIL', 'white on_red'));
-                $result
-            }
+        return $meth unless $meth ~~ Regex;
+        return -> $c, |args {
+            # Method name.
+            say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
+            
+            # Call rule.
+            $indent++;
+            my $result := $meth($obj, |args);
+            $indent--;
+            
+            # Dump result.
+            my $match := $result.MATCH;
+            say ('|  ' x $indent) ~ '* ' ~
+                ($result.MATCH ??
+                    colored('MATCH', 'white on_green') ~ summary($match) !!
+                    colored('FAIL', 'white on_red'));
+            $result
+        }
     }
     
     sub summary($match) {
