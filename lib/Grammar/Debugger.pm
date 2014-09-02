@@ -44,15 +44,16 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH>) ??
-            $meth !!
-            -> $c, |args {
-                # Method name.
-                say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
+        return $meth unless $meth ~~ Regex;
+        return -> $c, |args {
+            # Issue the rule's/token's/regex's name
+            say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
             
-            # Call rule.
+            # Announce that we're about to enter the rule/token/regex
             self.intervene(EnterRule, $name);
+
             $!state{'indent'}++;
+            # Actually call the rule/token/regex
             my $result := $meth($c, |args);
             $!state{'indent'}--;
             
@@ -63,6 +64,8 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
                     (?$match ??
                         colored('MATCH', 'white on_green') ~ self.summary($match) !!
                         colored('FAIL', 'white on_red'));
+
+            # Announce that we're about to leave the rule/token/regex
             self.intervene(ExitRule, $name, :$match);
             $result
         };

@@ -1,7 +1,10 @@
+use v6;
+
 use Test;
 use Grammar::Tracer;
 
-plan 1;
+plan *;
+
 
 grammar Sample {
     token TOP { <foo> }
@@ -13,4 +16,4 @@ lives_ok
         my $*OUT = class { method say(*@x) { }; method print(*@x) { } }
         Sample.parse('x')
     },
-    'Parsing a grammar with the tracer works';
+    'grammar.parse(...) with the tracer works';
