@@ -1,6 +1,8 @@
 use v6;
 
 use Test;
+use Grammar::Test::Helper;
+
 use Grammar::Debugger;
 
 plan 2;
@@ -11,11 +13,14 @@ grammar Sample {
     token foo { x }
 }
 
+sub grammars() {
+    return (Sample, Sample.new); # test both, the class and an instance
+}
 
-for (Sample, Sample.new) -> $gr { # test both, the class and an instance
-    lives_ok {
-        my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } };
-        my $*IN  = class { method get(*@x) { '' } };
-        $gr.parse('x')
-    }, 'grammar.parse(...) with the debugger lives';
+
+{
+    for grammars() -> $gr {
+        lives_ok { RemoteControl.do({ $gr.parse('x'); }) },
+            'grammar.parse(...) with the debugger lives';
+    }
 }
