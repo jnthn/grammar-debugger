@@ -2,16 +2,16 @@ module Grammar::Test::Helper;
 
 use Term::ANSIColor;
 
+enum StdStream is export <IN OUT ERR>;
+
 
 class RemoteControl is export {
 
-    my enum Where <IN OUT ERR>;
-
     class Out-capture {
-        has Where         $.where;
+        has StdStream     $.stdStream;
         has RemoteControl $.rc;
-        method print(*@args) { $.rc.record($.where, 'print', @args) }
-        method flush(*@args) { $.rc.record($.where, 'flush', @args) }
+        method print(*@args) { $.rc.record($.stdStream, 'print', @args) }
+        method flush(*@args) { $.rc.record($.stdStream, 'flush', @args) }
     }
 
     class In-capture {
@@ -28,10 +28,10 @@ class RemoteControl is export {
 
     has @!calls = ().hash;
 
-    method record(Where:D $where, Str:D $which, :$out?, *@args) {
+    method record(StdStream:D $stdStream, Str:D $which, :$out?, *@args) {
         @!calls.push({
             when  => now,
-            where => $where,
+            where => $stdStream,
             which => $which,
             args  => @args,
             out   => $out,
@@ -47,7 +47,7 @@ class RemoteControl is export {
 
     method !do (&block, :@answers = ()) {
         my ($oldOUT, $oldERR, $oldIN) = ($*OUT, $*ERR, $*IN);
-        ($*OUT, $*ERR, $*IN) = Out-capture.new(:where(OUT), :rc(self)), Out-capture.new(:where(ERR), :rc(self)), In-capture.new(:rc(self), :@answers);
+        ($*OUT, $*ERR, $*IN) = Out-capture.new(:stdStream(OUT), :rc(self)), Out-capture.new(:stdStream(ERR), :rc(self)), In-capture.new(:rc(self), :@answers);
         $!result = &block();
         ($*OUT, $*ERR, $*IN) = ($oldOUT, $oldERR, $oldIN);
         return self;
