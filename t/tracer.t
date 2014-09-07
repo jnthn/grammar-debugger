@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Grammar::Tracer;
 
-plan 1;
+plan 2;
 
 
 grammar Sample {
@@ -11,9 +11,10 @@ grammar Sample {
     token foo { x }
 }
 
-lives_ok
-    {
+
+for (Sample, Sample.new) -> $gr { # test both, the class and an instance
+    lives_ok {
         my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } }
-        Sample.parse('x')
-    },
-    'grammar.parse(...) with the tracer works';
+        $gr.parse('x')
+    }, 'grammar.parse(...) with the tracer lives';
+}
