@@ -16,26 +16,45 @@ class RemoteControl is export {
 
     class In-capture {
         has                 @.answers;
-        has Bool            $.echo = False;
         has RemoteControl   $.rc;
         method get(*@args) {
             my $out = @.answers ?? shift @.answers !! '';
             $.rc.record(IN, 'get', :$out, @args);
-            say $out if $.echo;
             return $out;
         }
     }
 
     has @!calls = ().hash;
 
+    method calls() {
+        return @!calls;
+    }
+
     method record(StdStream:D $stdStream, Str:D $which, :$out?, *@args) {
-        @!calls.push({
+        my $entry = {
             when  => now,
             where => $stdStream,
             which => $which,
             args  => @args,
             out   => $out,
-        });
+        };
+        $entry does role {
+            method Str(Bool :$colorstrip = False) {
+                self.perl(:$colorstrip);
+            }
+            method perl(Bool :$colorstrip = False) {
+                '$*' ~ self<where> ~ '.' ~ self<which>
+                    ~ ( self<args>.elems
+                        ?? '(' ~ self<args>.map({ ($colorstrip ?? colorstrip($_) !! $_).perl }) ~ ');' 
+                        !! ';' )
+                    ~ ( self<out>.defined 
+                        ?? ' # ~> ' ~ self<out>.perl
+                        !! '' )
+                    ~ '        # @' ~ self<when>
+                    ~ "\n"
+            }
+        };
+        @!calls.push($entry);
     }
 
     has $!result;   # should not be set via constructor
@@ -67,8 +86,20 @@ class RemoteControl is export {
         });
     }
 
-    method lines(Bool :$colorstrip = True, :$prefix = '') {
-        my @out = @!calls.grep({
+    multi method lines(Bool :$colorstrip = True, :$prefix = '') {
+        self!lines(@!calls, :$colorstrip, :$prefix)
+    }
+
+    multi method lines(StdStream:D $where, Bool :$colorstrip = True, :$prefix = '') {
+        self!lines(
+            @!calls.grep({ $_<where> == $where }),
+            :$colorstrip,
+            :$prefix
+        );
+    }
+
+    method !lines(@calls, Bool :$colorstrip = True, :$prefix = '') {
+        my @out = @calls.grep({
             $_<which> ne 'flush'
         }).map({
             $_<where> == IN
