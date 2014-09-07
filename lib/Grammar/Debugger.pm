@@ -1,5 +1,9 @@
 use Term::ANSIColor;
 
+# On Windows you can use perl 5 to get proper output:
+# - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
+# - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
+
 my enum InterventionPoint <EnterRule ExitRule>;
 
 multi trait_mod:<is>(Method $m, :$breakpoint!) is export {
@@ -13,60 +17,73 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
-    has $!indent = 0;
-    has $!auto-continue = False;
-    has $!stop-at-fail = False;
-    has $!stop-at-name = '';
-    has @!breakpoints;
-    has %!cond-breakpoints;
+my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
+
+    # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
+    # trying to change the attributes in &intervene ...
+    # ... yields # "Cannot modify an immutable value"
+    # So we rather use the attribute $!state *the contents of which* we'll
+    # modify instead.
+    # Not as bad as it might look at first - maybe factor it out sometime.
+    has $!state = (
+        auto-continue   => False,
+        indent           => 0,
+        stop-at-fail     => False,
+        stop-at-name     => '',
+        breakpoints      => [],
+        cond-breakpoints => ().hash,
+    ).hash;
     
     method add_method(Mu $obj, $name, $code) {
         callsame;
         if $code.?breakpoint {
             if $code.?breakpoint-condition {
-                %!cond-breakpoints{$code.name} = $code.breakpoint-condition;
+                $!state{'cond-breakpoints'}{$code.name} = $code.breakpoint-condition;
             }
             else {
-                @!breakpoints.push($code.name);
+                $!state{'breakpoints'}.push($code.name);
             }
         }
     }
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        substr($name, 0, 1) eq '!' || $name eq any(<parse CREATE BUILD Bool defined MATCH>) ??
-            $meth !!
-            -> $c, |args {
-                # Method name.
-                say ('|  ' x $!indent) ~ BOLD() ~ $name ~ RESET();
-                
-                # Call rule.
-                self.intervene(EnterRule, $name);
-                $!indent++;
-                my $result := $meth($c, |args);
-                $!indent--;
-                
-                # Dump result.
-                my $match := $result.MATCH;
-                say ('|  ' x $!indent) ~ '* ' ~
-                    ($result.MATCH ??
+        return $meth unless $meth ~~ Regex;
+        return -> $c, |args {
+            # Issue the rule's/token's/regex's name
+            say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
+            
+            # Announce that we're about to enter the rule/token/regex
+            self.intervene(EnterRule, $name);
+
+            $!state{'indent'}++;
+            # Actually call the rule/token/regex
+            my $result := $meth($c, |args);
+            $!state{'indent'}--;
+            
+            # Dump result.
+            my $match := $result.MATCH;
+            
+            say ('|  ' x $!state{'indent'}) ~ '* ' ~
+                    (?$match ??
                         colored('MATCH', 'white on_green') ~ self.summary($match) !!
                         colored('FAIL', 'white on_red'));
-                self.intervene(ExitRule, $name, :$match);
-                $result
-            }
+
+            # Announce that we're about to leave the rule/token/regex
+            self.intervene(ExitRule, $name, :$match);
+            $result
+        };
     }
     
     method intervene(InterventionPoint $point, $name, :$match) {
         # Any reason to stop?
         my $stop = 
-            !$!auto-continue ||
-            $point == EnterRule && $name eq $!stop-at-name ||
-            $point == ExitRule && !$match && $!stop-at-fail ||
-            $point == EnterRule && $name eq any(@!breakpoints) ||
-            $point == ExitRule && $name eq any(%!cond-breakpoints.keys)
-                && %!cond-breakpoints{$name}.ACCEPTS($match);
+            !$!state{'auto-continue'} ||
+            $point == EnterRule && $name eq $!state{'stop-at-name'} ||
+            $point == ExitRule && !$match && $!state{'stop-at-fail'} ||
+            $point == EnterRule && $name eq any($!state{'breakpoints'}) ||
+            $point == ExitRule && $name eq any($!state{'cond-breakpoints'}.keys)
+                && $!state{'cond-breakpoints'}{$name}.ACCEPTS($match);
         if $stop {
             my $done;
             repeat {
@@ -74,21 +91,21 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
                 $done = True;
                 given @parts[0] {
                     when '' {
-                        $!auto-continue = False;
-                        $!stop-at-fail = False;
-                        $!stop-at-name = '';
+                        $!state{'auto-continue'} = False;
+                        $!state{'stop-at-fail'} = False;
+                        $!state{'stop-at-name'} = '';
                     }
                     when 'r' {
                         given +@parts {
                             when 1 {
-                                $!auto-continue = True;
-                                $!stop-at-fail = False;
-                                $!stop-at-name = '';
+                                $!state{'auto-continue'} = True;
+                                $!state{'stop-at-fail'} = False;
+                                $!state{'stop-at-name'} = '';
                             }
                             when 2 {
-                                $!auto-continue = True;
-                                $!stop-at-fail = False;
-                                $!stop-at-name = @parts[1];
+                                $!state{'auto-continue'} = True;
+                                $!state{'stop-at-fail'} = False;
+                                $!state{'stop-at-name'} = @parts[1];
                             }
                             default {
                                 usage();
@@ -97,31 +114,31 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
                        }
                     }
                     when 'rf' {
-                        $!auto-continue = True;
-                        $!stop-at-fail = True;
-                        $!stop-at-name = '';
+                        $!state{'auto-continue'} = True;
+                        $!state{'stop-at-fail'} = True;
+                        $!state{'stop-at-name'} = '';
                     }
                     when 'bp' {
                         if +@parts == 2 && @parts[1] eq 'list' {
                             say "Current Breakpoints:\n" ~
-                                @!breakpoints.map({ "    $_" }).join("\n");
+                                $!state{'breakpoints'}.map({ "    $_" }).join("\n");
                         }
                         elsif +@parts == 3 && @parts[1] eq 'add' {
-                            unless @!breakpoints.grep({ $_ eq @parts[2] }) {
-                                @!breakpoints.push(@parts[2]);
+                            unless $!state{'breakpoints'}.grep({ $_ eq @parts[2] }) {
+                                $!state{'breakpoints'}.push(@parts[2]);
                             }
                         }
                         elsif +@parts == 3 && @parts[1] eq 'rm' {
-                            my @rm'd = @!breakpoints.grep({ $_ ne @parts[2] });
-                            if +@rm'd == +@!breakpoints {
+                            my @rm'd = $!state{'breakpoints'}.grep({ $_ ne @parts[2] });
+                            if +@rm'd == +$!state{'breakpoints'} {
                                 say "No breakpoint '@parts[2]'";
                             }
                             else {
-                                @!breakpoints = @rm'd;
+                                $!state{'breakpoints'} = @rm'd;
                             }
                         }
                         elsif +@parts == 2 && @parts[1] eq 'rm' {
-                            @!breakpoints = [];
+                            $!state{'breakpoints'} = [];
                         }
                         else {
                             usage();
@@ -142,7 +159,7 @@ my class DebuggedGrammarHOW is Mu is Metamodel::GrammarHOW {
     
     method summary($match) {
         my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $!indent);
+        my $sniplen = 60 - (3 * $!state{'indent'});
         $sniplen > 0 ??
             colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
             ''
