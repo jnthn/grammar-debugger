@@ -57,6 +57,17 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
         @!regexes.push($code) if $code ~~ Regex;
     }
 
+    method onRegexEnter(Str $name, Int $indent) {
+        #callsame;
+
+        # This is a crutch : can't seem to override and `callsame` the method from role InterceptedGrammarHOW...
+        # so we stupidly repeat what's done there:
+        self.announceRegexEnter($name, $indent); # Issue rule's/token's/regex's name
+        
+        # now do our additional stuff
+        self.intervene(EnterRule, $name);
+    }
+
     # just a tag to see if method is already wrapped
     my role Wrapped {}
     
@@ -77,11 +88,8 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
 
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
-            # Issue the rule's/token's/regex's name
-            say ('|  ' x $!state<indent>) ~ BOLD() ~ $name ~ RESET();
-            
             # Announce that we're about to enter the rule/token/regex
-            self.intervene(EnterRule, $name);
+            self.onRegexEnter($name, $!state<indent>);
 
             $!state{'indent'}++;
             # Actually call the rule/token/regex

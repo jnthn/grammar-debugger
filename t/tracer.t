@@ -25,12 +25,12 @@ grammar Sample {
 
         { # the following should be made a bit more flexible...
             my @lines = $out.lines; # all of them, non-filtered
+            #diag $out.lines();
             is @lines[0], "TOP\n",              "printed starting rule 'TOP'";
             is @lines[1], "|  foo\n",           "then went into rule 'foo'";
             is @lines[2], "|  * MATCH \"x\"\n", "then reported match of rule 'foo'";
             is @lines[3], "* MATCH \"x\"\n",    "then reported match of rule 'TOP'";
-            is @lines.elems, 4, "and that's it";
-            #diag $out.lines();
+            is @lines.elems, 4, "...and that's it";
         }
     }
 }

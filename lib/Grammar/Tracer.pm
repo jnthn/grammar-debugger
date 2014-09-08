@@ -15,8 +15,8 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW {
         my $meth := callsame;
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
-            # Method name.
-            say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
+            # Announce that we're about to enter the rule/token/regex
+            self.onRegexEnter($name, $indent);
             
             # Call rule.
             $indent++;
