@@ -1,4 +1,8 @@
+use v6;
 use Term::ANSIColor;
+
+use Grammar::InterceptedGrammarHOW;
+
 
 # On Windows you can use perl 5 to get proper output:
 # - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
@@ -17,7 +21,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
+my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW {
 
     # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
     # trying to change the attributes in &intervene ...
@@ -205,10 +209,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
             "    bp rm          removes all breakpoints\n" ~
             "    q              quit"
     }
-    
-    method publish_method_cache($obj) {
-        # Suppress this, so we always hit find_method.
-    }
+
 }
 
 # Export this as the meta-class for the "grammar" package declarator.
