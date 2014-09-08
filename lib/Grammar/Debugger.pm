@@ -67,7 +67,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
                     callsame;
                 });
                 $meth does Wrapped;
-                say(">>>>find_method $name: " ~ $meth.perl);
+                #say(">>>>find_method $name: " ~ $meth.perl);
             }
         }
 

@@ -104,3 +104,80 @@ class RemoteControl is export {
         return @out;
     }
 }
+
+
+
+
+
+
+my enum InvokeOn is export <ClassOnly InstanceOnly ClassAndInstance>;
+
+class ParseTask is Code does Callable {
+    has Grammar $!grammar;
+    has Method  $!parseMethod;
+    has Capture $!args;
+
+    submethod BUILD(Grammar:U :$grammarType, Bool:D :$callOnClass, :$!parseMethod, :$!args ) {
+        $!grammar = $callOnClass ?? $grammarType !! $grammarType.new;
+    }
+
+    method postcircumfix:<( )>(|ignoredArgs) {
+        return $!parseMethod($!grammar, |$!args);
+    }
+
+    method !str($argStr = '...') {
+        $!grammar.perl ~ '.' ~ $!parseMethod.name ~ "($argStr)";
+    
+    }
+
+    method Str() { self!str }
+
+    method perl() {
+        self!str(
+            $!args.list>>.perl.list.push(
+                $!args.hash.pairs.map({':' ~ $_.key ~ '(' ~ $_.value.perl ~ ')'})
+            ).join(', ')
+        );
+    }
+}
+
+
+multi sub parseTasks (
+    Grammar:U $grammarType,
+    Str :$file, # file to parse with parsefile
+    Str :$text, # text to parse or subparse
+    |args
+) is export {
+    return parseTasks(ClassAndInstance, $grammarType, :$file, :$text, |args);
+}
+
+multi sub parseTasks (
+    InvokeOn:D $invokeOn!,
+    Grammar:U $grammarType,
+    Str :$file, # file to parse with parsefile
+    Str :$text, # text to parse or subparse
+    |args
+) is export {
+    die "must provide one or both, :file and :text"
+        unless $file.defined || $text.defined;
+    my @invocants = ();
+    @invocants.push(True)
+        if $invokeOn == (ClassAndInstance, ClassOnly).any;
+    @invocants.push(False)
+        if $invokeOn == (ClassAndInstance, InstanceOnly).any;
+    my @parseMethods = <parse subparse parsefile>.map({ $grammarType.HOW.find_method($grammarType, $_) });
+    return (@invocants X @parseMethods).tree.map({
+        my $parseMethod = $_[1];
+        my $p = $parseMethod.name eq 'parsefile' ?? $file !! $text;
+        #say $p ~ ' ' ~ args.perl;
+        $p.defined
+            ?? ParseTask.new(
+                :$grammarType,
+                :callOnClass($_[0]),
+                :$parseMethod,
+                :args(Capture.new(:list($p,), :hash(args.hash)))
+            )
+            !! Nil
+        ;
+    });
+}

@@ -4,7 +4,10 @@ use Test;
 use Grammar::Test::Helper;
 
 plan 49;
+
+
 diag "RemoteControl tests";
+# ------------------------------------
 
 
 sub invocants {

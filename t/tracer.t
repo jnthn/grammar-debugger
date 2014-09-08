@@ -21,6 +21,6 @@ sub grammars() {
 {
     for grammars() -> $gr {
         lives_ok { RemoteControl.do({ $gr.parse('x'); }) },
-            'grammar.parse(...) with the debugger lives';
+            'grammar.parse(...) with the tracer lives';
     }
 }
