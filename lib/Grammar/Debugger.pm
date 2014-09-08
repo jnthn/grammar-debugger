@@ -25,30 +25,52 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
     # So we rather use the attribute $!state *the contents of which* we'll
     # modify instead.
     # Not as bad as it might look at first - maybe factor it out sometime.
-    has $!state = (
-        auto-continue   => False,
-        indent           => 0,
-        stop-at-fail     => False,
-        stop-at-name     => '',
-        breakpoints      => [],
-        cond-breakpoints => ().hash,
-    ).hash;
+    has $!state = ().hash does role {
+        method reset(:@regexes = ()) {
+            self<auto-continue>    = False;
+            self<indent>           = 0;
+            self<stop-at-fail>     = False;
+            self<stop-at-name>     = '';
+            self<breakpoints>      = ().list;
+            self<cond-breakpoints> = ().hash;
+            for @regexes -> $rx {
+                if $rx.?breakpoint {
+                    if $rx.?breakpoint-condition {
+                        self<cond-breakpoints>{$rx.name} = $rx.breakpoint-condition;
+                    } else {
+                        self<breakpoints>.push($rx.name);
+                    }
+                }
+            }
+            return self;
+        }
+    };
     
+    has @!regexes = ().list;
+
     method add_method(Mu $obj, $name, $code) {
         callsame;
-        if $code.?breakpoint {
-            if $code.?breakpoint-condition {
-                $!state{'cond-breakpoints'}{$code.name} = $code.breakpoint-condition;
-            }
-            else {
-                $!state{'breakpoints'}.push($code.name);
-            }
-        }
+        @!regexes.push($code) if $code ~~ Regex;
     }
+
+    # just a tag to see if method is already wrapped
+    my role Wrapped {}
     
     method find_method($obj, $name) {
         my $meth := callsame;
         #say ">>>>find_method $name";
+
+        if $name eq any('parse', 'subparse') {
+            if $meth !~~ Wrapped {
+                $meth.wrap(-> |args {
+                    $!state.reset(:@!regexes);
+                    callsame;
+                });
+                $meth does Wrapped;
+                say(">>>>find_method $name: " ~ $meth.perl);
+            }
+        }
+
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
             # Issue the rule's/token's/regex's name
@@ -79,12 +101,17 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
     method intervene(InterventionPoint $point, $name, :$match) {
         # Any reason to stop?
         my $stop = 
-            !$!state{'auto-continue'} ||
-            $point == EnterRule && $name eq $!state{'stop-at-name'} ||
-            $point == ExitRule && !$match && $!state{'stop-at-fail'} ||
-            $point == EnterRule && $name eq any($!state{'breakpoints'}) ||
-            $point == ExitRule && $name eq any($!state{'cond-breakpoints'}.keys)
-                && $!state{'cond-breakpoints'}{$name}.ACCEPTS($match);
+            !$!state<auto-continue> ||
+            $point == EnterRule && (
+                $name eq $!state<stop-at-name> ||
+                $name eq $!state<breakpoints>.any
+            ) ||
+            $point == ExitRule && (
+                !$match && $!state<stop-at-fail> ||
+                $name eq $!state<cond-breakpoints>.keys.any &&
+                    $!state<cond-breakpoints>{$name}.ACCEPTS($match)
+            )
+        ;
         if $stop {
             my $done;
             repeat {
