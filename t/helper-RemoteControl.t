@@ -3,17 +3,33 @@ use v6;
 use Test;
 use Grammar::Test::Helper;
 
-plan 49;
-
-
-diag "RemoteControl tests";
-# ------------------------------------
+plan 59;
 
 
 sub invocants {
     #return (RemoteControl);     # test on class only
     #return (RemoteControl.new); # test on instance only
     return (RemoteControl, RemoteControl.new); # test on both
+}
+
+
+diag "RemoteControl tests";
+# ------------------------------------
+
+{ diag 'RemoteControl catches exceptions thrown in &block and returns them as result';
+    for invocants() -> $rc {
+        my $out;
+        lives_ok { $out = $rc.do( -> {
+            say "last";
+            say "words";
+            die "Boom!";
+        })}, $rc.perl ~ " lives even if given block dies";
+
+        is $out.result, "Boom!", $rc.perl ~ " returns the exception thrown as .result";
+        is $out.lines.elems, 2, $rc.perl ~ " still records lines up to where it was thrown";
+        is $out.lines[0], "last\n", $rc.perl ~ " still records lines (1st)";
+        is $out.lines[1], "words\n", $rc.perl ~ " still records lines (2nd)";
+    }
 }
 
 {

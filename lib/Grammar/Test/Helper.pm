@@ -71,7 +71,16 @@ class RemoteControl is export {
     method !do (&block, :@answers = ()) {
         my ($oldOUT, $oldERR, $oldIN) = ($*OUT, $*ERR, $*IN);
         ($*OUT, $*ERR, $*IN) = Out-capture.new(:stdStream(OUT), :rc(self)), Out-capture.new(:stdStream(ERR), :rc(self)), In-capture.new(:rc(self), :@answers);
-        $!result = &block();
+        try {
+            $!result = &block();
+            #CATCH {    # doesn't seem to work (Rakudo* 2014.03)
+            #    $oldOUT.print(">>> in CATCH: " ~ $_ ~ "\n");
+            #    #$!result = $_;
+            #    $oldOUT.print(">>> end of CATCH: " ~ $_ ~ "\n");
+            #}
+            #$oldOUT.print('>>> after CATCH: $!=' ~ $! ~ ', $_=' ~ $_ ~ "\n");
+        }
+        $!result = $! if $!.defined;
         ($*OUT, $*ERR, $*IN) = ($oldOUT, $oldERR, $oldIN);
         return self;
     }
