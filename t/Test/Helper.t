@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Grammar::Test::Helper;
 
-plan *;
+plan 49;
 diag "RemoteControl tests";
 
 
@@ -56,7 +56,7 @@ sub invocants {
     }}
 }
 
-{ # should record all calls to print, say or note:
+{ diag 'should record all calls to print, say or note:';
     { for invocants() -> $rc {
         my $out = $rc.do({
             print("Hello", " ", "world!");
@@ -74,8 +74,13 @@ sub invocants {
         is $out.lines[4],       "FIN.",             $rc.perl ~ " doesn't add NL to incomplete line";
     }}
     { for invocants() -> $rc {
-        my $out = $rc.do({ say("Hello world!"); });
-        is $out.lines[0],       "Hello world!\n",   $rc.perl ~ " doesn't add spurious NL to last line";
+        my $out = $rc.do({ 
+            say("Hello world!"); 
+            say("Have fun!"); 
+        });
+        is $out.lines.elems,    2,                  $rc.perl ~ " doesn't add spurious NL to last line";
+        is $out.lines[0],       "Hello world!\n",   $rc.perl ~ " logs 1st line";
+        is $out.lines[1],       "Have fun!\n",      $rc.perl ~ " doesn't add spurious NL to last line";
     }}
 }
 
@@ -115,4 +120,29 @@ sub invocants {
         is $in2, 'bar', $rc.perl ~ " returns 2nd answer to client code without NL";
         is $in3, '',    $rc.perl ~ " returns 3rd answer to client code without NL";
     }}
+}
+
+
+{ # can filter .lines by passing a StdStream
+    { for invocants() -> $rc {
+        my $out = $rc.do(:answers<foo bar>, {
+            say "something";
+            prompt "> ";
+            prompt "> ";
+            say "done.";
+        });
+        my $lines = $out.lines(StdStream::IN);
+        #diag $lines;
+        is $lines.elems, 2, $rc.perl ~ " lines(IN) yields only lines with calls to get";
+    }}
+    { for invocants() -> $rc {
+        my $out = $rc.do({
+            say "something";
+            say "done.";
+        });
+        my $lines = $out.lines(StdStream::IN);
+        #diag $lines;
+        is $lines.elems, 0, $rc.perl ~ " lines(IN) yields only lines with calls to get";
+    }}
+
 }

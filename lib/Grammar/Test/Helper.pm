@@ -26,8 +26,12 @@ class RemoteControl is export {
 
     has @!calls = ().hash;
 
-    method calls() {
+    multi method calls() {
         return @!calls;
+    }
+
+    multi method calls(StdStream:D $stdStream) {
+        return @!calls.grep({ $_<where> == $stdStream });
     }
 
     method record(StdStream:D $stdStream, Str:D $which, :$out?, *@args) {
@@ -72,33 +76,15 @@ class RemoteControl is export {
         return self;
     }
 
-    method log(Bool :$colorstrip = True) {
-        @!calls.map({
-            '$*' ~ "$_<where>.$_<which>"
-                ~ ( $_<args>.elems
-                    ?? '(' ~ $_<args>.map({ ($colorstrip ?? colorstrip($_) !! $_).perl }) ~ ');' 
-                    !! ';' )
-                ~ ( $_<out>.defined 
-                    ?? '##<' ~ $_<out>.perl 
-                    !! '' )
-                ~ "\n"
-            ;
-        });
+    multi method lines(Bool :$colorstrip = True) {
+        self!lines(@!calls, :$colorstrip);
     }
 
-    multi method lines(Bool :$colorstrip = True, :$prefix = '') {
-        self!lines(@!calls, :$colorstrip, :$prefix)
+    multi method lines(StdStream:D $where, Bool :$colorstrip = True) {
+        self!lines( self.calls($where), :$colorstrip );
     }
 
-    multi method lines(StdStream:D $where, Bool :$colorstrip = True, :$prefix = '') {
-        self!lines(
-            @!calls.grep({ $_<where> == $where }),
-            :$colorstrip,
-            :$prefix
-        );
-    }
-
-    method !lines(@calls, Bool :$colorstrip = True, :$prefix = '') {
+    method !lines(@calls, Bool :$colorstrip = True) {
         my @out = @calls.grep({
             $_<which> ne 'flush'
         }).map({
@@ -107,10 +93,14 @@ class RemoteControl is export {
                 !! $_<args>.join('')
         }).map({
             $colorstrip ?? colorstrip($_) !! $_
-        }).join('').split(/\n/).map({
-            $prefix ~ $_ ~ "\n";
+        }).join('').split(/\n/);
+        my $last = pop @out;
+        @out = @out.map({
+            $_ ~ "\n";
         });
-        @out[*-1] = @out[*-1].substr(0, *-1);
-        @out;
+        if ($last ne '') {
+            @out.push($last);
+        }
+        return @out;
     }
 }

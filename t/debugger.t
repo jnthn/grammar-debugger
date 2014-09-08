@@ -5,12 +5,16 @@ use Grammar::Test::Helper;
 
 use Grammar::Debugger;
 
-plan 2;
+plan *;
 
 
 grammar Sample {
-    token TOP { <foo> }
-    token foo { x }
+    rule  TOP               { <foo> }
+    token foo               { x | <bar> | <baz> }
+    regex bar is breakpoint { bar }
+    regex baz               { baz }
+
+    method fizzbuzz {}
 }
 
 sub grammars() {
@@ -20,7 +24,12 @@ sub grammars() {
 
 {
     for grammars() -> $gr {
-        lives_ok { RemoteControl.do({ $gr.parse('x'); }) },
+        my $out;
+        lives_ok { $out = RemoteControl.do(:answers<r r>, { $gr.parse('x'); }) },
             'grammar.parse(...) with the debugger lives';
+
+        is $out.lines(StdStream::IN).elems, 1, "stopped once after TOP";
+        diag $out.lines();
+
     }
 }
