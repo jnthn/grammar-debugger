@@ -27,18 +27,10 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW {
             my $match := $result.MATCH;
             say ('|  ' x $indent) ~ '* ' ~
                 ($result.MATCH ??
-                    colored('MATCH', 'white on_green') ~ summary($match) !!
+                    colored('MATCH', 'white on_green') ~ self.summary($match, $indent) !!
                     colored('FAIL', 'white on_red'));
             $result
         }
-    }
-    
-    sub summary($match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $indent);
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
     }
 
 }

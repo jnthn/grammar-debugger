@@ -78,7 +78,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
             # Issue the rule's/token's/regex's name
-            say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
+            say ('|  ' x $!state<indent>) ~ BOLD() ~ $name ~ RESET();
             
             # Announce that we're about to enter the rule/token/regex
             self.intervene(EnterRule, $name);
@@ -91,9 +91,9 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
             # Dump result.
             my $match := $result.MATCH;
             
-            say ('|  ' x $!state{'indent'}) ~ '* ' ~
+            say ('|  ' x $!state<indent>) ~ '* ' ~
                     (?$match ??
-                        colored('MATCH', 'white on_green') ~ self.summary($match) !!
+                        colored('MATCH', 'white on_green') ~ self.summary($match, $!state<indent>) !!
                         colored('FAIL', 'white on_red'));
 
             # Announce that we're about to leave the rule/token/regex
@@ -187,14 +187,6 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
                 }
             } until $done;
         }
-    }
-    
-    method summary($match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $!state{'indent'});
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
     }
     
     sub usage() {
