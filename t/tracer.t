@@ -5,7 +5,7 @@ use Grammar::Test::Helper;
 
 use Grammar::Tracer;
 
-plan 10;
+plan 30;
 
 
 grammar Sample {
@@ -17,10 +17,21 @@ grammar Sample {
 }
 
 
-{
+{ diag 'check output for very simple successful parse';
     for parseTasks(Sample, :text('x')) -> $t {
-        lives_ok { RemoteControl.do($t) },
+        my $out;
+        lives_ok { $out = RemoteControl.do($t) },
             $t.perl ~ " with the tracer lives";
+
+        { # the following should be made a bit more flexible...
+            my @lines = $out.lines; # all of them, non-filtered
+            is @lines[0], "TOP\n",              "printed starting rule 'TOP'";
+            is @lines[1], "|  foo\n",           "then went into rule 'foo'";
+            is @lines[2], "|  * MATCH \"x\"\n", "then reported match of rule 'foo'";
+            is @lines[3], "* MATCH \"x\"\n",    "then reported match of rule 'TOP'";
+            is @lines.elems, 4, "and that's it";
+            #diag $out.lines();
+        }
     }
 }
 

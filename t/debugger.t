@@ -5,7 +5,7 @@ use Grammar::Test::Helper;
 
 use Grammar::Debugger;
 
-plan 21;
+plan 45;
 
 
 my $baz-file = IO::Path.new(IO::Path.new($?FILE).directory ~ '/baz.txt').absolute;
@@ -30,7 +30,17 @@ grammar Sample {
 
         is $out.lines(StdStream::IN).elems, 1,
             "$t stopped once after TOP";
-        #diag $out.lines();
+
+        { # the following should be made a bit more flexible...
+            my @lines = $out.lines; # all of them, non-filtered
+            is @lines[0], "TOP\n",              "printed starting rule 'TOP'";
+            is @lines[1], "> r\n",              "then stopped and asked what to do ~> `r`";
+            is @lines[2], "|  foo\n",           "then went into rule 'foo'";
+            is @lines[3], "|  * MATCH \"x\"\n", "then reported match of rule 'foo'";
+            is @lines[4], "* MATCH \"x\"\n",    "then reported match of rule 'TOP'";
+            is @lines.elems, 5, "and that's it";
+            #diag $out.lines();
+        }
     }
 }
 
