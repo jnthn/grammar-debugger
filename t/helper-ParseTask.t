@@ -2,14 +2,17 @@ use v6;
 
 use Test;
 use Grammar::Test::Helper;
+# do NOT put `use Grammar::Debugger` here!
 
-plan 34;
+plan 39;
 
 
-diag "&parseTasks tests";
+my $some-file = IO::Path.new(IO::Path.new($?FILE).directory ~ '/some.txt').absolute;
+ok $some-file.e, "got sample input file $some-file";
+
+{ diag "&parseTasks tests";
 # ------------------------------------
 
-{
     grammar Sample {
         rule TOP { xyz }
     }
@@ -63,7 +66,34 @@ diag "&parseTasks tests";
         is @ts.elems, 1, '1 combinations with InvokeOn::ClassOnly and named param :file';
         is @ts[0], 'Sample.parsefile("some.txt")';
     }
-    {
+
+    { diag "let's try with a file that actually exists - unsuccessful parse";
+        my @pts = parseTasks(InvokeOn::ClassAndInstance, Sample, :file(~$some-file));
+
+        my $match;
+        my $pt = @pts[0];
+        lives_ok { $match = $pt() }, $pt.perl ~ " lives";
+        nok $match.defined, 
+            "$pt does NOT succeed parsing (MATCH: " ~ ($match // '') ~ ')';
+    }
+
+    { diag "let's try with a file that actually exists - successful parse";
+        grammar G {
+            rule TOP {
+                some text [for us]? to parse
+            }
+        }
+
+        my @pts = parseTasks(InvokeOn::ClassAndInstance, G, :file(~$some-file));
+
+        my $match;
+        my $pt = @pts[0];
+        lives_ok { $match = $pt() }, $pt.perl ~ " lives";
+        ok $match.defined, 
+            "$pt does succeed parsing (MATCH: " ~ ($match // '') ~ ')';
+    }
+
+    { diag 'parseTasks(InvokeOn::ClassOnly, Sample, :text("xyz"), :file("some.txt")';
         my @ts = parseTasks(InvokeOn::ClassOnly, Sample, :text('xyz'), :file('some.txt'))>>.perl;
 
         is @ts.elems, 3, '3 combinations with InvokeOn::ClassOnly and named param :file and :text';
