@@ -5,7 +5,7 @@ use Grammar::Test::Helper;
 
 use Grammar::Debugger;
 
-plan 45;
+plan 49;
 
 
 my $baz-file = IO::Path.new(IO::Path.new($?FILE).directory ~ '/baz.txt').absolute;
@@ -25,14 +25,16 @@ grammar Sample {
 { diag 'can switch on auto-continue with `r`';
     for parseTasks(Sample, :text('x')) -> $t {
         my $out;
-        lives_ok { $out = RemoteControl.do($t, :answers<r r>) },
-            "$t with the debugger lives";
+        lives_ok { $out = RemoteControl.do($t, :answers<r r>) };
+        nok $out.result ~~ Exception, "$t with the tracer lives";
+        diag $out.result
+            if $out.result ~~ Exception;
 
         is $out.lines(StdStream::IN).elems, 1,
             "$t stopped once after TOP";
 
         { # the following should be made a bit more flexible...
-            my @lines = $out.lines; # all of them, non-filtered
+            my @lines = $out.lines(); # all of them, non-filtered
             #diag $out.lines();
             is @lines[0], "TOP\n",              "printed starting rule 'TOP'";
             is @lines[1], "> r\n",              "then stopped and asked what to do ~> `r`";

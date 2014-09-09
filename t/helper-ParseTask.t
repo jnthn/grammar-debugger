@@ -13,7 +13,7 @@ ok $some-file.e, "got sample input file $some-file";
 { diag "&parseTasks tests";
 # ------------------------------------
 
-    grammar Sample {
+    my grammar Sample {
         rule TOP { xyz }
     }
 
@@ -34,6 +34,7 @@ ok $some-file.e, "got sample input file $some-file";
         is @ts[2], 'Sample.new().parse("xyz")';
         is @ts[3], 'Sample.new().subparse("xyz")';
     }
+
     {
         my @ts = parseTasks(Sample, :file('some.txt'))>>.perl;
 
@@ -78,7 +79,7 @@ ok $some-file.e, "got sample input file $some-file";
     }
 
     { diag "let's try with a file that actually exists - successful parse";
-        grammar G {
+        my grammar G {
             rule TOP {
                 some text [for us]? to parse
             }

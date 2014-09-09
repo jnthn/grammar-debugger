@@ -23,13 +23,11 @@ my class TracedGrammarHOW is InterceptedGrammarHOW {
             my $result := $meth($obj, |args);
             $indent--;
             
-            # Dump result.
+            # Announce that we've returned from the rule/token/regex
             my $match := $result.MATCH;
-            say ('|  ' x $indent) ~ '* ' ~
-                ($result.MATCH ??
-                    colored('MATCH', 'white on_green') ~ self.summary($match, $indent) !!
-                    colored('FAIL', 'white on_red'));
-            $result
+            self.onRegexExit($name, $indent, $match);
+
+            $result;
         }
     }
 

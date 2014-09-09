@@ -22,5 +22,12 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
         say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
     }
 
+    method onRegexExit(Str $name, Int $indent, Match $match) {
+        say ('|  ' x $indent) ~ '* ' ~
+            ($match ??
+                colored('MATCH', 'white on_green') ~ self.summary($match, $indent) !!
+                colored('FAIL', 'white on_red'));
+    }
+
 }
 

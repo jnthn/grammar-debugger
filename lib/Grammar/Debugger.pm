@@ -58,11 +58,13 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
     }
 
     method onRegexEnter(Str $name, Int $indent) {
-        # Issue rule's/token's/regex's name
-        callsame;
-        
-        # now do our additional stuff
+        callsame;   # Issue rule's/token's/regex's name
         self.intervene(EnterRule, $name);
+    }
+
+    method onRegexExit(Str $name, Int $indent, Match $match) {
+        callsame;   # print name again plus "MATCH" or "FAIL" + some
+        self.intervene(ExitRule, $name, :$match);
     }
 
     # just a tag to see if method is already wrapped
@@ -88,22 +90,15 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
             # Announce that we're about to enter the rule/token/regex
             self.onRegexEnter($name, $!state<indent>);
 
-            $!state{'indent'}++;
             # Actually call the rule/token/regex
+            $!state<indent>++;
             my $result := $meth($c, |args);
-            $!state{'indent'}--;
+            $!state<indent>--;
             
-            # Dump result.
-            my $match := $result.MATCH;
-            
-            say ('|  ' x $!state<indent>) ~ '* ' ~
-                    (?$match ??
-                        colored('MATCH', 'white on_green') ~ self.summary($match, $!state<indent>) !!
-                        colored('FAIL', 'white on_red'));
+            # Announce that we've returned from the rule/token/regex
+            self.onRegexExit($name, $!state<indent>, $result.MATCH);
 
-            # Announce that we're about to leave the rule/token/regex
-            self.intervene(ExitRule, $name, :$match);
-            $result
+            $result;
         };
     }
     
