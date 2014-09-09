@@ -17,21 +17,27 @@ class RemoteControl is export {
     class In-capture {
         has                 @.answers;
         has RemoteControl   $.rc;
+        has Bool            $.echo = True;  # TODO: In-capture.echo
         method get(*@args) {
             my $out = @.answers ?? shift @.answers !! '';
             $.rc.record(IN, 'get', :$out, @args);
+            say $.echo ?? $out !! ''; # but do print a NL in any case!
             return $out;
         }
     }
 
     has @!calls = ().hash;
 
-    multi method calls() {
-        return @!calls;
-    }
-
-    multi method calls(StdStream:D $stdStream) {
-        return @!calls.grep({ $_<where> == $stdStream });
+    method calls(
+        Bool:D :$in  = True,    # Note: default different from that of &lines
+        Bool:D :$out = True,
+        Bool:D :$err = True,
+    ) {
+        return @!calls.grep({ # TODO: optimize
+            $in  && $_<where> == StdStream::IN  ||
+            $out && $_<where> == StdStream::OUT ||
+            $err && $_<where> == StdStream::ERR
+        });
     }
 
     method record(StdStream:D $stdStream, Str:D $which, :$out?, *@args) {
@@ -85,12 +91,28 @@ class RemoteControl is export {
         return self;
     }
 
-    multi method lines(Bool :$colorstrip = True) {
-        self!lines(@!calls, :$colorstrip);
+    multi method lines(
+        Bool :$in = False,
+        Bool :$out = True,
+        Bool :$err = True,
+        Bool :$colorstrip = True
+    ) {
+        self!lines( self.calls(:$in, :$out, :$err), :$colorstrip);
     }
 
+    # if no StdStream is given go by default (see above)
+    multi method lines(Bool :$colorstrip = True) {
+        self.lines(:$colorstrip);
+    }
+
+    # if one StdStream is given then consider calls exactly there
     multi method lines(StdStream:D $where, Bool :$colorstrip = True) {
-        self!lines( self.calls($where), :$colorstrip );
+        self.lines(
+            :in( $where == StdStream::IN ),
+            :out($where == StdStream::OUT),
+            :err($where == StdStream::ERR),
+            :$colorstrip
+        );
     }
 
     method !lines(@calls, Bool :$colorstrip = True) {
