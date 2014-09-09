@@ -21,7 +21,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW {
+my class DebuggedGrammarHOW is InterceptedGrammarHOW {
 
     # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
     # trying to change the attributes in &intervene ...
@@ -58,11 +58,8 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW does InterceptedGrammarHOW 
     }
 
     method onRegexEnter(Str $name, Int $indent) {
-        #callsame;
-
-        # This is a crutch : can't seem to override and `callsame` the method from role InterceptedGrammarHOW...
-        # so we stupidly repeat what's done there:
-        self.announceRegexEnter($name, $indent); # Issue rule's/token's/regex's name
+        # Issue rule's/token's/regex's name
+        callsame;
         
         # now do our additional stuff
         self.intervene(EnterRule, $name);

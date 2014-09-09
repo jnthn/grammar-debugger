@@ -3,7 +3,7 @@ use v6;
 use Term::ANSIColor;
 
 
-role InterceptedGrammarHOW {
+class InterceptedGrammarHOW is Metamodel::GrammarHOW {
 
     method publish_method_cache($obj) {
         # Suppress this, so we always hit find_method.
@@ -17,13 +17,9 @@ role InterceptedGrammarHOW {
             ''
     }
 
-    # this is a crutch: can't seem to override and use callsame in Debugger...
-    method announceRegexEnter(Str $name, Int $indent) {
-        say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
-    }
-
     method onRegexEnter(Str $name, Int $indent) {
-        self.announceRegexEnter($name, $indent); # Issue the rule's/token's/regex's name
+        # Issue the rule's/token's/regex's name
+        say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
     }
 
 }
