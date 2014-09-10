@@ -1,16 +1,6 @@
 use v6;
-use Term::ANSIColor;
-# On Windows you might see "gibberish" - that's because the plain ol' cmd.exe
-# doesn't understand ANSI escape codes which are to colour the output.
-# There's a few options that you have in that case:
-# - instead of ol' cmd.exe use a console that understands the codes
-#   * Console2: http://www.hanselman.com/blog/Console2ABetterWindowsCommandPrompt.aspx
-#   * AnsiCon: https://github.com/adoxa/ansicon
-#   (see https://github.com/jnthn/grammar-debugger/pull/6)
-# - OR you can use perl 5 to get proper output, by
-#   * sending it through Win32::Console::ANSI like this: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
-#   * stripping off all the escape codes like this:      perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
 
+use Term::ANSIColor;
 use Grammar::InterceptedGrammarHOW;
 
 
