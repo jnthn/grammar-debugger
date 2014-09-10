@@ -1,7 +1,5 @@
 use v6;
 
-use Term::ANSIColor;    # TODO: get rid of ANSIColor here; see also TODO at end of file
-
 
 class InterceptedGrammarHOW is Metamodel::GrammarHOW {
 
@@ -30,16 +28,16 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
         self.onRegexExit($m.name, $!state<indent>, $result.MATCH);
     }
 
-    ## those are to be overridden by subclass:
+    ## those are to be overridden by the subclass:
     method resetState() {}
-    #method onRegexEnter(Str $name, Int $indent) {} # TODO: see TODO at end of file
-    #method onRegexExit(Str $name, Match $match, Int $indent) {}    # TODO: see TODO at end of file
+    method onRegexEnter(Str $name, Int $indent) {}
+    method onRegexExit(Str $name, Match $match, Int $indent) {}
 
     method find_method(Mu $obj, $name) {
         my $meth := callsame;
 
         # TODO: parsefile actually calls parse in the current implementation
-        # but that may change.
+        # - but that may change.
         # So here again we have kind of a "magic" list of method names for
         # intercepting the *start of a new parse*.
         # This should be abstracted somehow.
@@ -78,32 +76,6 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     method publish_method_cache($obj) {
         # Suppress this, so we always hit find_method.
     }
-
-
-# -----------------------------------------------------------------------------
-# TODO: all the stuff below should go somewhere else - although it
-# is still common to both, Debugger *and* Tracer...
-
-    method onRegexEnter(Str $name, Int $indent) {
-        # Issue the rule's/token's/regex's name
-        say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
-    }
-
-    method onRegexExit(Str $name, Int $indent, Match $match) {
-        say ('|  ' x $indent) ~ '* ' ~
-            ($match ??
-                colored('MATCH', 'white on_green') ~ self.summary($indent, $match) !!
-                colored('FAIL', 'white on_red'));
-    }
-
-    method summary(Int $indent, Match $match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $indent);
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
-    }
-
 
 
 }

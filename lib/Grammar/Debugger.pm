@@ -1,12 +1,6 @@
 use v6;
-use Term::ANSIColor;
+use Grammar::Tracer;
 
-use Grammar::InterceptedGrammarHOW;
-
-
-# On Windows you can use perl 5 to get proper output:
-# - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
-# - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
 
 my enum InterventionPoint <EnterRule ExitRule>;
 
@@ -21,7 +15,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is InterceptedGrammarHOW {
+my class DebuggedGrammarHOW is TracedGrammarHOW {
 
     # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
     # trying to change the attributes in &intervene ...
