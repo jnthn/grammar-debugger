@@ -67,7 +67,7 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
         self.intervene(ExitRule, $name, :$match);
     }
     
-    method find_method($obj, $name) {
+    method find_method(Mu $obj, $name) {
         my $meth := callsame;
 
         if $name eq any(<parse subparse>) {
@@ -93,13 +93,14 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
         }
 
         return $meth unless $meth ~~ Regex;
-        return -> $c, |args {
+
+        return -> |args {
             # Announce that we're about to enter the rule/token/regex
             self.onRegexEnter($name, $!state<indent>);
-
+            
             # Actually call the rule/token/regex
             $!state<indent>++;
-            my $result := $meth($c, |args);
+            my $result := $meth(|args);
             $!state<indent>--;
             
             # Announce that we've returned from the rule/token/regex

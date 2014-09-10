@@ -45,21 +45,21 @@ my class TracedGrammarHOW is InterceptedGrammarHOW {
         }
 
         return $meth unless $meth ~~ Regex;
-        return -> Mu $c, |args {
+
+        return -> |args {
             # Announce that we're about to enter the rule/token/regex
             self.onRegexEnter($name, $!state<indent>);
             
             # Call rule.
             $!state<indent>++;
-            my $result := $meth($c, |args);
+            my $result := $meth(|args);
             $!state<indent>--;
             
             # Announce that we've returned from the rule/token/regex
-            my $match := $result.MATCH;
-            self.onRegexExit($name, $!state<indent>, $match);
+            self.onRegexExit($name, $!state<indent>, $result.MATCH);
 
             $result;
-        }
+        };
     }
 
 }
