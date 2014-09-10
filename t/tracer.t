@@ -15,8 +15,7 @@ grammar Sample {
         { die "Boom!" }
     }
 }
-Sample.parse('boom');
-exit;
+
 
 { diag 'check output for very simple successful parse';
     for parseTasks(Sample, :text('x')) -> $t {
