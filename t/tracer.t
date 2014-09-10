@@ -22,9 +22,11 @@ grammar Sample {
         my $out;
         lives_ok({ $out = RemoteControl.do($t) },
             $t.perl ~ " with the tracer lives");
-        isa_ok($out.result, Match,
+        my $r = $out.result;
+        isa_ok($r, Match,
             $t.perl ~ " with the tracer succeeded")
-            || diag $out.result;
+            || diag $r ~ ($r ~~ Exception ?? "\n" ~ $r.backtrace !! '')
+        ;
 
         { # the following should be made a bit more flexible...
             my @lines = $out.lines(StdStream::OUT); # ignore STDERR
