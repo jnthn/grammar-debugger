@@ -43,7 +43,7 @@ In that case your options are:
 - Accept it and try to become Neo, he who "sees through"...
 - Wait for a perl6 equivalent of Win32::Console::ANSI
 - Wait for "colour-stripped" versions of Debugger and Tracer
-- Instead of ol' cmd.exe use a console that understands the codes (ref #6)
+- Or, instead of ol' cmd.exe, use a console that understands the codes (ref #6)
     * [Console2](http://www.hanselman.com/blog/Console2ABetterWindowsCommandPrompt.aspx)
     * [AnsiCon](https://github.com/adoxa/ansicon)
     
@@ -56,4 +56,4 @@ In that case your options are:
 ----
 
 # Bugs? Ideas?
-Please file them in GitHub issues.
+Please [file them in GitHub issues](https://github.com/jnthn/grammar-debugger/issues/new).
