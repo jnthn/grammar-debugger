@@ -19,11 +19,13 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     }
 
     method !onRegexEnter(Method $m) {
+        # inform subclass about it:
         self.onRegexEnter($m.name, $!state<indent>);
         $!state<indent>++; # let's *explicitly* put the *post*-increment here!
     }
 
     method !onRegexExit(Method $m, Mu $result) {
+        # inform subclass about it:
         --$!state<indent>; # let's *explicitly* put the *pre*(sic!)-decrement here!
         self.onRegexExit($m.name, $!state<indent>, $result.MATCH);
     }
@@ -66,15 +68,9 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
         return $meth unless $meth ~~ Regex;
 
         return -> |args {
-            # Announce that we're about to enter the rule/token/regex
             self!onRegexEnter($meth);
-            
-            # Actually call the rule/token/regex
             my $result := $meth(|args);
-            
-            # Announce that we've returned from the rule/token/regex
             self!onRegexExit($meth, $result);
-
             $result;
         };
     }
