@@ -18,14 +18,14 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
         self.resetState;    # tell subclass to reset their's
     }
 
-    method !onRegexEnter(Str $name) {
-        self.onRegexEnter($name, $!state<indent>);
+    method !onRegexEnter(Method $m) {
+        self.onRegexEnter($m.name, $!state<indent>);
         $!state<indent>++; # let's *explicitly* put the *post*-increment here!
     }
 
-    method !onRegexExit(Str $name, Match $match) {
+    method !onRegexExit(Method $m, Mu $result) {
         --$!state<indent>; # let's *explicitly* put the *pre*(sic!)-decrement here!
-        self.onRegexExit($name, $!state<indent>, $match);
+        self.onRegexExit($m.name, $!state<indent>, $result.MATCH);
     }
 
     ## those are to be overridden by subclass:
@@ -67,13 +67,13 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
 
         return -> |args {
             # Announce that we're about to enter the rule/token/regex
-            self!onRegexEnter($name);
+            self!onRegexEnter($meth);
             
             # Actually call the rule/token/regex
             my $result := $meth(|args);
             
             # Announce that we've returned from the rule/token/regex
-            self!onRegexExit($name, $result.MATCH);
+            self!onRegexExit($meth, $result);
 
             $result;
         };
@@ -96,11 +96,11 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     method onRegexExit(Str $name, Int $indent, Match $match) {
         say ('|  ' x $indent) ~ '* ' ~
             ($match ??
-                colored('MATCH', 'white on_green') ~ self.summary($match, $indent) !!
+                colored('MATCH', 'white on_green') ~ self.summary($indent, $match) !!
                 colored('FAIL', 'white on_red'));
     }
 
-    method summary(Match $match, Int $indent) {
+    method summary(Int $indent, Match $match) {
         my $snippet = $match.Str;
         my $sniplen = 60 - (3 * $indent);
         $sniplen > 0 ??
