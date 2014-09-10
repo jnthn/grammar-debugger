@@ -43,10 +43,11 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
         # This should be abstracted somehow.
         if $name eq any(<parse subparse>) {
             
-            # Wrapped: tag role st *we* (here) wrap only once
-            # There's more to code wrapping than one might
-            # think (see Routine.pm) and they use a role named 
-            # Wrapped there, too. It's not public - for a reason...!
+            # role Wrapped: nothing but a tag st *we* (here) wrap only once.
+            # Note that there's more to code wrapping than one might
+            # think (see Routine.pm).
+            # They use a role named Wrapped there, too. 
+            # And it's NOT public, FOR A REASON!
             # Hence we cannot use it here - it would be
             # incorrect anyways as someone else could have
             # wrapped it before (in which case we still need
