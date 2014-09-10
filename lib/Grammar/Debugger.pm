@@ -57,6 +57,10 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
         @!regexes.push($code) if $code ~~ Regex;
     }
 
+    method resetState() {
+        $!state.reset(:@!regexes);
+    }
+
     method onRegexEnter(Str $name, Int $indent) {
         callsame;   # Issue rule's/token's/regex's name
         self.intervene(EnterRule, $name);
@@ -65,49 +69,6 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
     method onRegexExit(Str $name, Int $indent, Match $match) {
         callsame;   # print name again plus "MATCH" or "FAIL" + some
         self.intervene(ExitRule, $name, :$match);
-    }
-    
-    method find_method(Mu $obj, $name) {
-        my $meth := callsame;
-
-        if $name eq any(<parse subparse>) {
-            
-            # Wrapped: tag role st *we* (here) wrap only once
-            # There's more to code wrapping than one might
-            # think (see Routine.pm) and they use a role named 
-            # Wrapped there, too. It's not public - for a reason...!
-            # Hence we cannot use it here - it would be
-            # incorrect anyways as someone else could have
-            # wrapped it before (in which case we still need
-            # to wrap our own stuff around).
-            my role Wrapped {};
-
-            if !$meth.does(Wrapped) {
-                $meth.wrap(-> |args {
-                    $!state.reset(:@!regexes);   # TODO: unify with Tracer
-                    callsame;
-                });
-                $meth does Wrapped;
-            }
-            #note ">>>>>>>>>>>>> find_method(..., $name) ~> " ~ ($meth ~~ Any ?? $meth.perl !! '???');
-        }
-
-        return $meth unless $meth ~~ Regex;
-
-        return -> |args {
-            # Announce that we're about to enter the rule/token/regex
-            self.onRegexEnter($name, $!state<indent>);
-            
-            # Actually call the rule/token/regex
-            $!state<indent>++;
-            my $result := $meth(|args);
-            $!state<indent>--;
-            
-            # Announce that we've returned from the rule/token/regex
-            self.onRegexExit($name, $!state<indent>, $result.MATCH);
-
-            $result;
-        };
     }
     
     method intervene(InterventionPoint $point, $name, :$match) {

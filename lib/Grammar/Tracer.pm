@@ -10,58 +10,6 @@ use Grammar::InterceptedGrammarHOW;
 
 my class TracedGrammarHOW is InterceptedGrammarHOW {
 
-    # Use same pattern for keeping state as in Debugger (see there)
-    # TODO: to be refactored sometime...
-    has $!state = (().hash does role {
-        multi method reset() {
-            self<indent> = 0;
-            return self;
-        }
-    }).reset;
-    
-    method find_method(Mu $obj, $name) {
-        my $meth := callsame;
-
-        if $name eq any(<parse subparse>) {
-            
-            # Wrapped: tag role st *we* (here) wrap only once
-            # There's more to code wrapping than one might
-            # think (see Routine.pm) and they use a role named 
-            # Wrapped there, too. It's not public - for a reason...!
-            # Hence we cannot use it here - it would be
-            # incorrect anyways as someone else could have
-            # wrapped it before (in which case we still need
-            # to wrap our own stuff around).
-            my role Wrapped {};
-
-            if !$meth.does(Wrapped) {
-                $meth.wrap(-> |args {
-                    $!state.reset();   # TODO: unify with Debugger
-                    callsame;
-                });
-                $meth does Wrapped;
-            }
-            #note ">>>>>>>>>>>>> find_method(..., $name) ~> " ~ ($meth ~~ Any ?? $meth.perl !! '???');
-        }
-
-        return $meth unless $meth ~~ Regex;
-
-        return -> |args {
-            # Announce that we're about to enter the rule/token/regex
-            self.onRegexEnter($name, $!state<indent>);
-            
-            # Call rule.
-            $!state<indent>++;
-            my $result := $meth(|args);
-            $!state<indent>--;
-            
-            # Announce that we've returned from the rule/token/regex
-            self.onRegexExit($name, $!state<indent>, $result.MATCH);
-
-            $result;
-        };
-    }
-
 }
 
 # Export this as the meta-class for the "grammar" package declarator.

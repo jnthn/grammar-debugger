@@ -33,7 +33,8 @@ grammar Sample {
                     "|  foo\n",
                     "|  * MATCH \"x\"\n",
                     "* MATCH \"x\"\n",
-                ], $t.perl ~ " with the tracer gives correct output on STDOUT");
+                ], $t.perl ~ " with the tracer gives correct output on STDOUT")
+                || diag ' ' ~ @lines;
         }
     }
 }
