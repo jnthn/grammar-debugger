@@ -15,15 +15,16 @@ grammar Sample {
         { die "Boom!" }
     }
 }
-
+Sample.parse('boom');
+exit;
 
 { diag 'check output for very simple successful parse';
     for parseTasks(Sample, :text('x')) -> $t {
         my $out;
         lives_ok({ $out = RemoteControl.do($t) },
-            $t.perl ~ " with the tracer lives (a)");
-        nok($out.result ~~ Exception,
-            $t.perl ~ " with the tracer lives (b)")
+            $t.perl ~ " with the tracer lives");
+        isa_ok($out.result, Match,
+            $t.perl ~ " with the tracer succeeded")
             || diag $out.result;
 
         { # the following should be made a bit more flexible...

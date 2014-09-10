@@ -18,7 +18,7 @@ grammar Sample {
     regex bar is breakpoint { bar }
     regex baz               { baz }
 
-    method fizzbuzz {}
+    method not_a_regex {}
 }
 
 
@@ -29,8 +29,8 @@ grammar Sample {
     ) -> $t {
         my $out;
         lives_ok({ $out = RemoteControl.do($t, :answers<r r>) }, 
-            $t.perl ~ " with the debugger lives (a)");
-        nok($out.result ~~ Exception, $t.perl ~ " with the debugger lives (b)")
+            $t.perl ~ " with the debugger lives");
+        isa_ok($out.result, Match, $t.perl ~ " with the debugger succeeded")
             || diag $out.result;
 
         my @lines-IN = $out.lines(StdStream::IN);
