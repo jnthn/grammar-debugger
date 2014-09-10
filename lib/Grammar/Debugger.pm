@@ -29,8 +29,8 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
     # So we rather use the attribute $!state *the contents of which* we'll
     # modify instead.
     # Not as bad as it might look at first - maybe factor it out sometime.
-    has $!state = ().hash does role {
-        method reset(:@regexes = ()) {
+    has $!state = (().hash does role {
+        multi method reset(:@regexes = ()) {
             self<auto-continue>    = False;
             self<indent>           = 0;
             self<stop-at-fail>     = False;
@@ -48,7 +48,7 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
             }
             return self;
         }
-    };
+    }).reset;
     
     has @!regexes = ().list;
 
@@ -66,23 +66,30 @@ my class DebuggedGrammarHOW is InterceptedGrammarHOW {
         callsame;   # print name again plus "MATCH" or "FAIL" + some
         self.intervene(ExitRule, $name, :$match);
     }
-
-    # just a tag to see if method is already wrapped
-    my role Wrapped {}
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        #say ">>>>find_method $name";
 
-        if $name eq any('parse', 'subparse') {
-            if $meth !~~ Wrapped {
+        if $name eq any(<parse subparse>) {
+            
+            # Wrapped: tag role st *we* (here) wrap only once
+            # There's more to code wrapping than one might
+            # think (see Routine.pm) and they use a role named 
+            # Wrapped there, too. It's not public - for a reason...!
+            # Hence we cannot use it here - it would be
+            # incorrect anyways as someone else could have
+            # wrapped it before (in which case we still need
+            # to wrap our own stuff around).
+            my role Wrapped {};
+
+            if !$meth.does(Wrapped) {
                 $meth.wrap(-> |args {
-                    $!state.reset(:@!regexes);
+                    $!state.reset(:@!regexes);   # TODO: unify with Tracer
                     callsame;
                 });
                 $meth does Wrapped;
-                #say(">>>>find_method $name: " ~ $meth.perl);
             }
+            #note ">>>>>>>>>>>>> find_method(..., $name) ~> " ~ ($meth ~~ Any ?? $meth.perl !! '???');
         }
 
         return $meth unless $meth ~~ Regex;
