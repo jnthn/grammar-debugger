@@ -43,16 +43,9 @@ my class DebuggedGrammarHOW is TracedGrammarHOW {
             return self;
         }
     }).reset;
-    
-    has @!regexes = ().list;
-
-    method add_method(Mu $obj, $name, $code) {
-        callsame;
-        @!regexes.push($code) if $code ~~ Regex;
-    }
 
     method resetState() {
-        $!state.reset(:@!regexes);
+        $!state.reset(:@.regexes);
     }
 
     method onRegexEnter(Str $name, Int $indent) {

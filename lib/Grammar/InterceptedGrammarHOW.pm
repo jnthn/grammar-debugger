@@ -33,6 +33,15 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     method onRegexEnter(Str $name, Int $indent) {}
     method onRegexExit(Str $name, Match $match, Int $indent) {}
 
+# -----------------------------------------------------------------------------
+
+    has @.regexes = ().list;
+
+    method add_method(Mu $obj, $name, $code) {
+        callsame;
+        @.regexes.push($code) if $code ~~ Regex;
+    }
+
     method find_method(Mu $obj, $name) {
         my $meth := callsame;
 
@@ -77,7 +86,6 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     method publish_method_cache($obj) {
         # Suppress this, so we always hit find_method.
     }
-
 
 }
 
