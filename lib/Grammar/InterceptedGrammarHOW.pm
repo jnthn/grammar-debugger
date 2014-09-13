@@ -31,7 +31,7 @@ class InterceptedGrammarHOW is Metamodel::GrammarHOW {
     ## those are to be overridden by the subclass:
     method resetState() {}
     method onRegexEnter(Str $name, Int $indent) {}
-    method onRegexExit(Str $name, Match $match, Int $indent) {}
+    method onRegexExit(Str $name, Int $indent, Match $match) {}
 
 # -----------------------------------------------------------------------------
 
