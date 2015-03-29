@@ -2,6 +2,18 @@
     "name" : "Grammar::Debugger",
     "version" : "*",
     "description" : "Simple tracing and debugging support for Perl 6 grammars",
-    "depends" : [ "Term::ANSIColor" ],
+    "build-depends" : [
+        "Term::ANSIColor"
+    ],
+    "test-depends" : [
+        "Test"
+    ],
+    "depends" : [
+        "Term::ANSIColor"
+    ],
+    "provides" : {
+        "Grammar::Tracer" : "lib/Grammar/Tracer.pm",
+        "Grammar::Debugger" : "lib/Grammar/Debugger.pm"
+    },
     "source-url" : "git://github.com/jnthn/grammar-debugger.git"
 }
