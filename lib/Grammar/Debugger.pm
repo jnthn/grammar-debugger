@@ -1,8 +1,6 @@
-use Term::ANSIColor;
+use v6;
+use Grammar::Tracer;
 
-# On Windows you can use perl 5 to get proper output:
-# - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
-# - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
 
 my enum InterventionPoint <EnterRule ExitRule>;
 
@@ -17,7 +15,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
+my class DebuggedGrammarHOW is TracedGrammarHOW {
 
     # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
     # trying to change the attributes in &intervene ...
@@ -25,65 +23,55 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
     # So we rather use the attribute $!state *the contents of which* we'll
     # modify instead.
     # Not as bad as it might look at first - maybe factor it out sometime.
-    has $!state = (
-        auto-continue   => False,
-        indent           => 0,
-        stop-at-fail     => False,
-        stop-at-name     => '',
-        breakpoints      => [],
-        cond-breakpoints => ().hash,
-    ).hash;
-    
-    method add_method(Mu $obj, $name, $code) {
-        callsame;
-        if $code.?breakpoint {
-            if $code.?breakpoint-condition {
-                $!state{'cond-breakpoints'}{$code.name} = $code.breakpoint-condition;
+    has $!state = (().hash does role {
+        multi method reset(:@regexes = ()) {
+            self<auto-continue>    = False;
+            self<indent>           = 0;
+            self<stop-at-fail>     = False;
+            self<stop-at-name>     = '';
+            self<breakpoints>      = ().list;
+            self<cond-breakpoints> = ().hash;
+            for @regexes -> $rx {
+                if $rx.?breakpoint {
+                    if $rx.?breakpoint-condition {
+                        self<cond-breakpoints>{$rx.name} = $rx.breakpoint-condition;
+                    } else {
+                        self<breakpoints>.push($rx.name);
+                    }
+                }
             }
-            else {
-                $!state{'breakpoints'}.push($code.name);
-            }
+            return self;
         }
+    }).reset;
+
+    method resetState() {
+        $!state.reset(:@.regexes);
     }
-    
-    method find_method($obj, $name) {
-        my $meth := callsame;
-        return $meth unless $meth ~~ Regex;
-        return -> $c, |args {
-            # Issue the rule's/token's/regex's name
-            say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
-            
-            # Announce that we're about to enter the rule/token/regex
-            self.intervene(EnterRule, $name);
 
-            $!state{'indent'}++;
-            # Actually call the rule/token/regex
-            my $result := $meth($c, |args);
-            $!state{'indent'}--;
-            
-            # Dump result.
-            my $match := $result.MATCH;
-            
-            say ('|  ' x $!state{'indent'}) ~ '* ' ~
-                    (?$match ??
-                        colored('MATCH', 'white on_green') ~ self.summary($match) !!
-                        colored('FAIL', 'white on_red'));
+    method onRegexEnter(Str $name, Int $indent) {
+        callsame;   # Issue rule's/token's/regex's name
+        self.intervene(EnterRule, $name);
+    }
 
-            # Announce that we're about to leave the rule/token/regex
-            self.intervene(ExitRule, $name, :$match);
-            $result
-        };
+    method onRegexExit(Str $name, Int $indent, Match $match) {
+        callsame;   # print name again plus "MATCH" or "FAIL" + some
+        self.intervene(ExitRule, $name, :$match);
     }
     
     method intervene(InterventionPoint $point, $name, :$match) {
         # Any reason to stop?
         my $stop = 
-            !$!state{'auto-continue'} ||
-            $point == EnterRule && $name eq $!state{'stop-at-name'} ||
-            $point == ExitRule && !$match && $!state{'stop-at-fail'} ||
-            $point == EnterRule && $name eq any($!state{'breakpoints'}) ||
-            $point == ExitRule && $name eq any($!state{'cond-breakpoints'}.keys)
-                && $!state{'cond-breakpoints'}{$name}.ACCEPTS($match);
+            !$!state<auto-continue> ||
+            $point == EnterRule && (
+                $name eq $!state<stop-at-name> ||
+                $name eq $!state<breakpoints>.any
+            ) ||
+            $point == ExitRule && (
+                !$match && $!state<stop-at-fail> ||
+                $name eq $!state<cond-breakpoints>.keys.any &&
+                    $!state<cond-breakpoints>{$name}.ACCEPTS($match)
+            )
+        ;
         if $stop {
             my $done;
             repeat {
@@ -157,14 +145,6 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
         }
     }
     
-    method summary($match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $!state{'indent'});
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
-    }
-    
     sub usage() {
         say
             "    r              run (until breakpoint, if any)\n" ~
@@ -177,10 +157,7 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
             "    bp rm          removes all breakpoints\n" ~
             "    q              quit"
     }
-    
-    method publish_method_cache($obj) {
-        # Suppress this, so we always hit find_method.
-    }
+
 }
 
 # Export this as the meta-class for the "grammar" package declarator.
