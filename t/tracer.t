@@ -11,7 +11,7 @@ grammar Sample {
     token foo { x }
 }
 
-lives_ok
+lives-ok
     {
         my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } }
         Sample.parse('x')
