@@ -3,13 +3,13 @@
     "version" : "*",
     "description" : "Simple tracing and debugging support for Perl 6 grammars",
     "build-depends" : [
-        "Term::ANSIColor"
+        "Terminal::ANSIColor"
     ],
     "test-depends" : [
         "Test"
     ],
     "depends" : [
-        "Term::ANSIColor"
+        "Terminal::ANSIColor"
     ],
     "provides" : {
         "Grammar::Tracer" : "lib/Grammar/Tracer.pm",
