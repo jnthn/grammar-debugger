@@ -1,4 +1,4 @@
-use Term::ANSIColor;
+use Terminal::ANSIColor;
 
 # On Windows you can use perl 5 to get proper output:
 # - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
