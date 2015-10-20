@@ -9,8 +9,8 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
     
     method find_method($obj, $name) {
         my $meth := callsame;
-        return $meth if $meth.WHAT.^name eq 'NQPRoutine';
-        return $meth unless $meth ~~ Regex;
+        return $meth if $meth.WHAT.^name eq 'NQPRoutine'
+                     || $meth.WHAT.^name ne 'Regex';
         return -> $c, |args {
             # Method name.
             say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
