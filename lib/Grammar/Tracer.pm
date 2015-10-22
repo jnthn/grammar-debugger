@@ -10,6 +10,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
     method find_method($obj, $name) {
         my $meth := callsame;
         return $meth if $meth.WHAT.^name eq 'NQPRoutine';
+        return $meth unless $meth ~~ Any;
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
             # Method name.
