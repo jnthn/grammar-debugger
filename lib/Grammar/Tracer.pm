@@ -5,38 +5,41 @@ use Terminal::ANSIColor;
 # - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
 
 my class TracedGrammarHOW is Metamodel::GrammarHOW {
-    my $indent = 0;
-    
+    my $level = 0;
+    my @traces;
+
     method find_method($obj, $name) {
         my $meth := callsame;
         return $meth if $meth.WHAT.^name eq 'NQPRoutine';
         return $meth unless $meth ~~ Any;
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
-            # Method name.
-            say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
-            
+
+            @traces.append: Any ;
+
+            my $this = @traces.end ;
+            my $indentation = '   ' x $level ;
+
             # Call rule.
-            $indent++;
+            $level++;
             my $result := $meth($obj, |args);
-            $indent--;
-            
+            $level--;
+
+            if $result.MATCH {
+                my $width = 79 - (3 * $level);
+
+                @traces[$this] = $indentation ~ colored($name, 'bold green') ~ RESET( ) ~ ' '
+                                   ~ ( $width > 0 ?? $result.MATCH.Str.substr(0, $width).perl !! '' )
+            }
+            else{
+                @traces[$this] = $indentation ~ colored($name, 'bold red') ~ RESET()
+            }
+
             # Dump result.
-            my $match := $result.MATCH;
-            say ('|  ' x $indent) ~ '* ' ~
-                ($result.MATCH ??
-                    colored('MATCH', 'white on_green') ~ summary($match) !!
-                    colored('FAIL', 'white on_red'));
+            @traces.join("\n").say if $level == 0 ;
+
             $result
         }
-    }
-    
-    sub summary($match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $indent);
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
     }
     
     method publish_method_cache($obj) {
