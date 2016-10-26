@@ -1,4 +1,5 @@
 {
+    "perl" : "6.*",
     "name" : "Grammar::Debugger",
     "version" : "*",
     "description" : "Simple tracing and debugging support for Perl 6 grammars",
