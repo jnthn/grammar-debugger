@@ -6,7 +6,7 @@ use Terminal::ANSIColor;
 
 my class TracedGrammarHOW is Metamodel::GrammarHOW {
     my $indent = 0;
-    
+
     method find_method($obj, $name) {
         my $meth := callsame;
         return $meth if $meth.WHAT.^name eq 'NQPRoutine';
@@ -15,12 +15,12 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
         return -> $c, |args {
             # Method name.
             say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
-            
+
             # Call rule.
             $indent++;
             my $result := $meth($obj, |args);
             $indent--;
-            
+
             # Dump result.
             my $match := $result.MATCH;
             say ('|  ' x $indent) ~ '* ' ~
@@ -30,7 +30,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
             $result
         }
     }
-    
+
     sub summary($match) {
         my $snippet = $match.Str;
         my $sniplen = 60 - (3 * $indent);
@@ -38,7 +38,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
             colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
             ''
     }
-    
+
     method publish_method_cache($obj) {
         # Suppress this, so we always hit find_method.
     }
