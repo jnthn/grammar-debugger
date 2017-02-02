@@ -9,7 +9,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
 
     method find_method($obj, $name) {
         my $meth := callsame;
-        return $meth if $meth.WHAT.^name eq 'NQPRoutine';
+        return $meth if $meth.^name eq 'NQPRoutine';
         return $meth unless $meth ~~ Any;
         return $meth unless $meth ~~ Regex;
         return -> $c, |args {
@@ -45,5 +45,6 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW {
 }
 
 # Export this as the meta-class for the "grammar" package declarator.
-my module EXPORTHOW { }
-EXPORTHOW::<grammar> = TracedGrammarHOW;
+my module EXPORTHOW {
+    constant grammar = TracedGrammarHOW;
+}
