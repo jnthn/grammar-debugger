@@ -1,33 +1,38 @@
+use Grammar::Debugger::WrapCache;
 use Terminal::ANSIColor;
 
 # On Windows you can use perl 5 to get proper output:
 # - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
 # - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
 
-my class TracedGrammarHOW is Metamodel::GrammarHOW {
+my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapCache {
     my $indent = 0;
 
     method find_method($obj, $name) {
+        my \cached = %!cache{$name};
+        return cached if cached.DEFINITE;
         my $meth := callsame;
-        return $meth if $meth.^name eq 'NQPRoutine';
-        return $meth unless $meth ~~ Any;
-        return $meth unless $meth ~~ Regex;
-        return -> $c, |args {
-            # Method name.
-            say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
+        if $meth.^name eq 'NQPRoutine' || $meth !~~ Any || $meth !~~ Regex {
+            self!cache-unwrapped: $name, $meth;
+        }
+        else {
+            self!cache-wrapped: $name, -> $c, |args {
+                # Method name.
+                say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
 
-            # Call rule.
-            $indent++;
-            my $result := $meth($obj, |args);
-            $indent--;
+                # Call rule.
+                $indent++;
+                my $result := $meth($obj, |args);
+                $indent--;
 
-            # Dump result.
-            my $match := $result.MATCH;
-            say ('|  ' x $indent) ~ '* ' ~
-                ($result.MATCH ??
-                    colored('MATCH', 'white on_green') ~ summary($match) !!
-                    colored('FAIL', 'white on_red'));
-            $result
+                # Dump result.
+                my $match := $result.MATCH;
+                say ('|  ' x $indent) ~ '* ' ~
+                    ($result.MATCH ??
+                        colored('MATCH', 'white on_green') ~ summary($match) !!
+                        colored('FAIL', 'white on_red'));
+                $result
+            }
         }
     }
 

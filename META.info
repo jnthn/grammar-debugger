@@ -14,7 +14,8 @@
     ],
     "provides" : {
         "Grammar::Tracer" : "lib/Grammar/Tracer.pm6",
-        "Grammar::Debugger" : "lib/Grammar/Debugger.pm6"
+        "Grammar::Debugger" : "lib/Grammar/Debugger.pm6",
+        "Grammar::Debugger::WrapCache" : "lib/Grammar/Debugger/WrapCache.pm6"
     },
     "source-url" : "git://github.com/jnthn/grammar-debugger.git"
 }
