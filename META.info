@@ -1,7 +1,7 @@
 {
     "perl" : "6.*",
     "name" : "Grammar::Debugger",
-    "version" : "*",
+    "version" : "1.0",
     "description" : "Simple tracing and debugging support for Perl 6 grammars",
     "build-depends" : [
         "Terminal::ANSIColor"
