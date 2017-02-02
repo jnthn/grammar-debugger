@@ -7,37 +7,28 @@ plan 1;
 
 # Test case taken from GitHub Issue #13
 
-grammar CppGrammar {
-    proto token type { * }
-    token type:builtin {
-        [
-            || 'const char *'
-            || 'void'
-        ]
+grammar MyGrammar {
+    proto token test { * }
+    token test:sym<first> {
+        {} aa
     }
-
-    rule type:identifier {
-        <?>
-        'const'?
-        \w+
-        $<pointy>=[<[&*]>* % <.ws>]
-
+    token test:sym<longest> {
+        aa
     }
 }
 
 class MyActions {
-    method type:builtin ($/) {
-        make 'builtin'
+    method test:sym<first>($/) {
+        make 'wrong'
     }
-
-    method type:identifier ($/) {
-        make 'identifier'
+    method test:sym<longest>($/) {
+        make 'correct'
     }
 }
 
 my $outcome = do {
     my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } }
-	CppGrammar.parse('const char *', :rule<type>, :actions(MyActions)).made
+	MyGrammar.parse('aa', :rule<test>, :actions(MyActions)).made
 }
 todo 'Grammar::Tracer busts LTM';
-is $outcome, 'identifier', 'Picked longest token';
+is $outcome, 'correct', 'Picked longest token';
