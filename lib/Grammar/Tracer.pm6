@@ -16,7 +16,7 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapC
             self!cache-unwrapped: $name, $meth;
         }
         else {
-            self!cache-wrapped: $name, -> $c, |args {
+            self!cache-wrapped: $name, $meth, -> $c, |args {
                 # Method name.
                 say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
 

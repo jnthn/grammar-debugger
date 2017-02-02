@@ -30,5 +30,4 @@ my $outcome = do {
     my $*OUT = class { method say(*@x) { }; method print(*@x) { }; method flush(*@x) { } }
 	MyGrammar.parse('aa', :rule<test>, :actions(MyActions)).made
 }
-todo 'Grammar::Tracer busts LTM';
 is $outcome, 'correct', 'Picked longest token';
