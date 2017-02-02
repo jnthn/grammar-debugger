@@ -1,0 +1,11 @@
+language: perl6
+
+perl6:
+    - latest
+    - 2016.01
+
+install:
+    - rakudobrew build-zef
+    - zef update && zef install Terminal::ANSIColor
+script:
+    - PERL6LIB=lib prove -v -r --exec=perl6 t/
