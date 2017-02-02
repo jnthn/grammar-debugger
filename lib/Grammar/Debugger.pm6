@@ -1,3 +1,4 @@
+use Grammar::Debugger::WrapCache;
 use Terminal::ANSIColor;
 
 # On Windows you can use perl 5 to get proper output:
@@ -17,7 +18,7 @@ multi trait_mod:<will>(Method $m, $cond, :$break!) is export {
     $m.breakpoint-condition = $cond;
 }
 
-my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
+my class DebuggedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapCache {
 
     # Workaround for Rakudo* 2014.03.01 on Win (and maybe somewhere else, too):
     # trying to change the attributes in &intervene ...
@@ -47,34 +48,38 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
     }
 
     method find_method($obj, $name) {
+        my \cached = %!cache{$name};
+        return cached if cached.DEFINITE;
         my $meth := callsame;
-        return $meth if $meth.WHAT.^name eq 'NQPRoutine';
-        return $meth unless $meth ~~ Any;
-        return $meth unless $meth ~~ Regex;
-        return -> $c, |args {
-            # Issue the rule's/token's/regex's name
-            say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
+        if $meth.^name eq 'NQPRoutine' || $meth !~~ Any || $meth !~~ Regex {
+            self!cache-unwrapped: $name, $meth;
+        }
+        else {
+            self!cache-wrapped: $name, $meth, -> $c, |args {
+                # Issue the rule's/token's/regex's name
+                say ('|  ' x $!state{'indent'}) ~ BOLD() ~ $name ~ RESET();
 
-            # Announce that we're about to enter the rule/token/regex
-            self.intervene(EnterRule, $name);
+                # Announce that we're about to enter the rule/token/regex
+                self.intervene(EnterRule, $name);
 
-            $!state{'indent'}++;
-            # Actually call the rule/token/regex
-            my $result := $meth($c, |args);
-            $!state{'indent'}--;
+                $!state{'indent'}++;
+                # Actually call the rule/token/regex
+                my $result := $meth($c, |args);
+                $!state{'indent'}--;
 
-            # Dump result.
-            my $match := $result.MATCH;
+                # Dump result.
+                my $match := $result.MATCH;
 
-            say ('|  ' x $!state{'indent'}) ~ '* ' ~
-                    (?$match ??
-                        colored('MATCH', 'white on_green') ~ self.summary($match) !!
-                        colored('FAIL', 'white on_red'));
+                say ('|  ' x $!state{'indent'}) ~ '* ' ~
+                        (?$match ??
+                            colored('MATCH', 'white on_green') ~ self.summary($match) !!
+                            colored('FAIL', 'white on_red'));
 
-            # Announce that we're about to leave the rule/token/regex
-            self.intervene(ExitRule, $name, :$match);
-            $result
-        };
+                # Announce that we're about to leave the rule/token/regex
+                self.intervene(ExitRule, $name, :$match);
+                $result
+            }
+        }
     }
 
     method intervene(InterventionPoint $point, $name, :$match) {
@@ -186,5 +191,6 @@ my class DebuggedGrammarHOW is Metamodel::GrammarHOW {
 }
 
 # Export this as the meta-class for the "grammar" package declarator.
-my module EXPORTHOW { }
-EXPORTHOW::<grammar> = DebuggedGrammarHOW;
+my module EXPORTHOW {
+    constant grammar = DebuggedGrammarHOW;
+}
