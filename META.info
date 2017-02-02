@@ -13,8 +13,8 @@
         "Terminal::ANSIColor"
     ],
     "provides" : {
-        "Grammar::Tracer" : "lib/Grammar/Tracer.pm",
-        "Grammar::Debugger" : "lib/Grammar/Debugger.pm"
+        "Grammar::Tracer" : "lib/Grammar/Tracer.pm6",
+        "Grammar::Debugger" : "lib/Grammar/Debugger.pm6"
     },
     "source-url" : "git://github.com/jnthn/grammar-debugger.git"
 }
