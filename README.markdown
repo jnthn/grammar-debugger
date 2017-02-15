@@ -30,4 +30,4 @@ Once again, after a use:
 It will apply to any grammars in the lexical scope of the use statement.
 
 # Bugs? Ideas?
-Please file them in GitHub issues.
+Please file them in [GitHub issues](https://github.com/jnthn/grammar-debugger/issues).
