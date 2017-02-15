@@ -1,9 +1,31 @@
 use Grammar::Debugger::WrapCache;
 use Terminal::ANSIColor;
 
-# On Windows you can use perl 5 to get proper output:
-# - send through Win32::Console::ANSI: perl6 MyGrammar.pm | perl -e "use Win32::Console::ANSI; print while (<>)"
-# - to strip all the escape codes:     perl6 MyGrammar.pm | perl -e "print s/\e\[[0-9;]+m//gr while (<>)"
+=begin pod
+
+=head1 NAME
+
+Grammer::Tracer - non-interactive debugger for Perl 6 grammars
+
+=head1 SYNOPSIS
+
+In the file that has your grammar definition, merely load the module
+in the same lexical scope:
+
+	use Grammar::Tracer
+
+	grammar Some::Grammar { ... }
+
+=head1 DESCRIPTION
+
+L<Grammar::Tracer> is the non-interactive version of L<Grammar::Debugger>.
+It runs through the entire grammar without stopping.
+
+=head1 AUTHOR
+
+Jonathan Worthington, C<< <jnthn@jnthn.net> >>
+
+=end pod
 
 my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapCache {
     my $indent = 0;
