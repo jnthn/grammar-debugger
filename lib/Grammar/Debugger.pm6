@@ -12,7 +12,7 @@ Grammer::Debugger - interactive debugger for Perl 6 grammars
 In the file that has your grammar definition, merely load the module
 in the same lexical scope:
 
-	use Grammar::Debugger
+	use Grammar::Debugger;
 
 	grammar Some::Grammar { ... }
 
