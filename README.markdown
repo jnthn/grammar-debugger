@@ -1,9 +1,9 @@
 # Grammar::Debugger [![Build Status](https://travis-ci.org/jnthn/grammar-debugger.svg?branch=master)](https://travis-ci.org/jnthn/grammar-debugger)
-This module provides a simple debugger for grammars. Just use it:
+This module provides a simple debugger for grammars. Just `use` it:
 
     use Grammar::Debugger;
 
-And any grammar in the lexical scope of the use statement will
+And any grammar in the lexical scope of the `use` statement will
 automatically have debugging enabled. The debugger will break
 execution when you first enter the grammar, and provide a prompt.
 Type "h" for a list of commands.
