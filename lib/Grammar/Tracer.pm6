@@ -44,8 +44,9 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapC
 
                 # Call rule.
                 $indent++;
+		my $result;
                 try {
-		    my $result := $meth($c, |args);
+		    $result := $meth($c, |args);
 		    CATCH {
 		        say "Caught and rethrowing exception $_";
 		    }
