@@ -44,13 +44,13 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapC
 
                 # Call rule.
                 $indent++;
-		my $result;
+                my $result;
                 try {
-		    $result := $meth($c, |args);
-		    CATCH {
+                    $result := $meth($c, |args);
+                    CATCH {
                         $indent--;
-		    }
-		}
+                    }
+                }
                 $indent--;
 
                 # Dump result.
