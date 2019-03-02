@@ -29,5 +29,10 @@ Once again, after a use:
 
 It will apply to any grammars in the lexical scope of the use statement.
 
+The default behavior of this module is to output traces for all grammars as they are parsed.  The function GrammarTraceMode() is exported to allow this behavior to be changed at runtime.
+
+    GrammarTraceMode(Always) # Default, always output full traces
+    GrammarTraceMode(Never)  # Disable all Grammar Tracing
+
 # Bugs? Ideas?
 Please file them in [GitHub issues](https://github.com/jnthn/grammar-debugger/issues).

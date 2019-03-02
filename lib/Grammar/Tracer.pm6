@@ -27,8 +27,17 @@ Jonathan Worthington, C<< <jnthn@jnthn.net> >>
 
 =end pod
 
+enum TraceModes <Always Never Error>;
+my TraceModes $mode = Always;
+
+sub GrammarTraceMode(TraceModes $mode_in) is export {
+    $mode = $mode_in;
+}
+
+
 my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapCache {
-    my $indent = 0;
+   my $level = 0;
+   my @traces;
 
     method find_method($obj, $name) {
         my \cached = %!cache{$name};
@@ -39,37 +48,41 @@ my class TracedGrammarHOW is Metamodel::GrammarHOW does Grammar::Debugger::WrapC
         }
         else {
             self!cache-wrapped: $name, $meth, -> $c, |args {
-                # Method name.
-                say ('|  ' x $indent) ~ BOLD() ~ $name ~ RESET();
 
+                @traces = () if $level == 0 ;
+
+                @traces.append: Any ;
+                
+                my $this = @traces.end ;
+                my $indentation = '   ' x $level ;
+            
                 # Call rule.
-                $indent++;
+                $level++;
                 my $result;
                 try {
                     $result := $meth($c, |args);
                     CATCH {
-                        $indent--;
+                        $level--;
                     }
                 }
-                $indent--;
-
+                $level--;
+                
+                if $result.MATCH {
+                    my $width = 79 - (3 * $level);
+                    
+                    @traces[$this] = $indentation ~ colored($name, 'bold green') ~ RESET( ) ~ ' '
+                    ~ ( $width > 0 ?? $result.MATCH.Str.substr(0, $width).perl !! '' )
+                }
+                else{
+                    @traces[$this] = $indentation ~ colored($name, 'bold red') ~ RESET()
+                }
+                
                 # Dump result.
-                my $match := $result.MATCH;
-                say ('|  ' x $indent) ~ '* ' ~
-                    ($result.MATCH ??
-                        colored('MATCH', 'white on_green') ~ summary($match) !!
-                        colored('FAIL', 'white on_red'));
+                @traces.join("\n").say if $level == 0 && ($mode == Always || ($mode == Error && !$result.MATCH));
+                
                 $result
             }
         }
-    }
-
-    sub summary($match) {
-        my $snippet = $match.Str;
-        my $sniplen = 60 - (3 * $indent);
-        $sniplen > 0 ??
-            colored(' ' ~ $snippet.substr(0, $sniplen).perl, 'white') !!
-            ''
     }
 
     method publish_method_cache($obj) {
